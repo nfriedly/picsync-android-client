@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:key="preferencescreen"
+        android:title="@string/pref_category_name"
+        >
+    <EditTextPreference
+            android:key="api_key"
+            android:title="@string/pref_apikey_title"
+            android:summary="@string/pref_apikey_summary"
+            />
+    <CheckBoxPreference
+            android:key="automatic_uploads"
+            android:title="@string/pref_automatic_uploads_title"
+            android:summary="@string/pref_automatic_uploads_summary"
+            android:defaultValue="true"
+            android:dependency="api_key"
+            />
+</PreferenceScreen>
+
+
+

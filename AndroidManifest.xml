@@ -4,12 +4,21 @@
       android:versionCode="1"
       android:versionName="1.0">
     <application android:label="@string/app_name">
-        <activity android:name=".Settings"
+        <activity android:name=".SettingsActivity"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".PictureObserverService"/>
+        <service android:name=".PictureUploaderService"/>
+        <receiver android:name=".BootReceiver">
+            <intent-filter>
+                <!-- Similar to the BOOT_COMPLETED event, but waits until the SD card is ready in case we're installed there -->
+                <action android:name="android.intent.action.ACTION_EXTERNAL_APPLICATIONS_AVAILABLE" >
+                </action>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest> 

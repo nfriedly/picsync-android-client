@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">picsync-android-client</string>
+    <string name="app_name">PicSync</string>
+    <string name="site_url">http://picsync.nfriedly.com/</string>
+    <string name="site_url_secure">https://picsync.heroku.com</string>
+
+    <string name="pref_apikey_title">API Key</string>
+    <string name="pref_apikey_summary">Go to picsync.com to get your API Key.</string>
+
+    <string name="pref_automatic_uploads_title">Automatic Uploads</string>
+    <string name="pref_automatic_uploads_summary">Upload pictures to a private album</string>
+    <string name="pref_category_name">PicSync Settings</string>
 </resources>
