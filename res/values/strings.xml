@@ -10,4 +10,5 @@
     <string name="pref_automatic_uploads_title">Automatic Uploads</string>
     <string name="pref_automatic_uploads_summary">Upload pictures to a private album</string>
     <string name="pref_category_name">PicSync Settings</string>
+    <string name="upload_service_name">PicSync Uploader</string>
 </resources>

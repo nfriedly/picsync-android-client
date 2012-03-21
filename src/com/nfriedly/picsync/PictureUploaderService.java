@@ -37,20 +37,27 @@ import java.util.List;
 public class PictureUploaderService extends Service {
     private SharedPreferences prefs;
     private String TAG = "picsync.PictureUploaderService";
-    
-    public IBinder onBind(Intent intent) {
+
+    public void onCreate() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        Log.d(TAG, "Upload service started");
+    }
+
+    /**
+     * per the android docs, onStart is deprecated and replaced with 
+     * public int onStartCommand (Intent intent, int flags, int startId) starting in API level 5
+     * @param intent
+     */
+    public void onStart(Intent intent) {
         String api_key = prefs.getString("api_key", "");
         String server = "https://picsync.heroku.com/upload";
 
         Log.d(TAG, String.format("Upload starting with api_key %s and server %s", api_key, server));
-
         try {
             uploadImage(server, api_key, readPictureData(this, intent.getData()));
         } catch (IOException e) {
             Log.e(TAG, "Exception uploading picture", e);
         }
-        return null;
     }
 
     private void uploadImage(String server, String api_key, String pictureBase64) throws IOException {
@@ -99,5 +106,16 @@ public class PictureUploaderService extends Service {
         dataStream.read(pictureData);
 
         return new String(pictureData);
+    }
+
+    /**
+     * todo: determine if this is really needed and impliment it if so
+     * @param intent
+     * @return
+     */
+    public IBinder onBind (Intent intent) {
+        Log.d(TAG, "onBind called, redirecting to onStart");
+        onStart(intent);
+        return null;
     }
 }

@@ -13,7 +13,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".PictureUploaderService"/>
+        <service android:name=".PictureUploaderService"
+                 android:process=":uploader"
+                 android:label="@string/upload_service_name"
+                >
+
+        </service>
         <receiver android:name=".PictureReceiver">
             <intent-filter>
                 <action android:name="com.android.camera.NEW_PICTURE" />
