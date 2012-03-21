@@ -86,10 +86,8 @@
       <file leaf-file-name="PictureUploaderService.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/nfriedly/picsync/PictureUploaderService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="119" column="13" selection-start="4707" selection-end="4707" vertical-scroll-proportion="0.7303371">
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
+            <state line="2" column="27" selection-start="58" selection-end="58" vertical-scroll-proportion="0.056179777">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -679,10 +677,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/nfriedly/picsync/PictureUploaderService.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="119" column="13" selection-start="4707" selection-end="4707" vertical-scroll-proportion="0.7303371">
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
+        <state line="2" column="27" selection-start="58" selection-end="58" vertical-scroll-proportion="0.056179777">
+          <folding />
         </state>
       </provider>
     </entry>

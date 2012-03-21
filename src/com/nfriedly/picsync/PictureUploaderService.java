@@ -1,7 +1,6 @@
 package com.nfriedly.picsync;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -54,6 +53,7 @@ public class PictureUploaderService extends Service {
         }
     }
 
+    // I don't think this will ever be called, but it's a required method so I might as well implement it right...
     @Override
     public IBinder onBind(Intent intent) {
         onStart(intent, 0); // todo: determine what the startId should be or if 0 is good
@@ -107,6 +107,8 @@ public class PictureUploaderService extends Service {
             uploadStream.flush();
 
             Log.d(TAG, "upload complete, status is" + conn.getResponseCode() + "\n response was \n" + conn.getResponseMessage());
+
+            System.gc(); // let the system know that now would be a great time to recover whatever memory we've used.
         }
         finally {
             // cleanup - probably unnecessary unless something else went wrong
@@ -114,7 +116,6 @@ public class PictureUploaderService extends Service {
                 if(uploadStream != null) uploadStream.close();
                 if(imageStream != null) imageStream .close();
                 if(conn != null) conn.disconnect();
-                // System.gc(); // is this worthwhile?
             } catch(IOException ioe) {
                 Log.d(TAG, "Error cleaning up", ioe);
             }
