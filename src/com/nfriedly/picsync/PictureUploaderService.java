@@ -1,31 +1,19 @@
 package com.nfriedly.picsync;
 
 import android.app.Service;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.ContentObserver;
-import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
-import android.os.IBinder;
+import android.os.*;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.util.Log;
-import android.widget.Toast;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.client.HttpClient;
-import org.apache.http.message.BasicNameValuePair;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.Date;
 
 /**
  * PictureUploaderService
@@ -36,7 +24,12 @@ import java.util.List;
  */
 public class PictureUploaderService extends Service {
     private SharedPreferences prefs;
-    private String TAG = "picsync.PictureUploaderService";
+    private static final String TAG = "picsync.PictureUploaderService";
+
+    private static final String CRLF = "\r\n";
+    private static final String BOUNDARY_BASE = "picsyncboundary";
+    private static final String BOUNDARY = "--" + BOUNDARY_BASE + CRLF;
+    private static final String CLOSE_BOUNDARY = "--" + BOUNDARY_BASE + "--" + CRLF;
 
     public void onCreate() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -44,78 +37,88 @@ public class PictureUploaderService extends Service {
     }
 
     /**
-     * per the android docs, onStart is deprecated and replaced with 
-     * public int onStartCommand (Intent intent, int flags, int startId) starting in API level 5
+     * starting in API level 5, onStart is deprecated and replaced with
+     * public int onStartCommand (Intent intent, int flags, int startId)
      * @param intent
+     * @param startId
      */
-    public void onStart(Intent intent) {
+    public void onStart(Intent intent, int startId) {
         String api_key = prefs.getString("api_key", "");
-        String server = "https://picsync.heroku.com/upload";
+        String server = "https://picsync.herokuapp.com/upload";
 
         Log.d(TAG, String.format("Upload starting with api_key %s and server %s", api_key, server));
         try {
-            uploadImage(server, api_key, readPictureData(this, intent.getData()));
-        } catch (IOException e) {
-            Log.e(TAG, "Exception uploading picture", e);
+            uploadImage(server, api_key, intent.getData());
+        } catch (Throwable t) {
+            Log.e(TAG, "Error uploading picture", t);
         }
     }
 
-    private void uploadImage(String server, String api_key, String pictureBase64) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost( server );
-        List<NameValuePair> postContent = new ArrayList<NameValuePair>(2);
-        postContent.add(new BasicNameValuePair("api_key", api_key));
-        postContent.add(new BasicNameValuePair("img", pictureBase64));
-        httpPost.setEntity(new UrlEncodedFormEntity(postContent));
-        HttpResponse response = httpClient.execute(httpPost);
-        httpClient.getConnectionManager().shutdown();
-        Log.d(TAG, "Upload complet, response status is " + response.getStatusLine());
-    }
-
-    private String readPictureData(Context context, Uri picUri) throws IOException {
-
-        ContentResolver cr = new ContentResolver(context) {
-            @Override
-            public void notifyChange(Uri uri, ContentObserver observer) {
-            }
-
-            @Override
-            public void notifyChange(Uri uri, ContentObserver observer, boolean syncToNetwork) {
-            }
-
-            @Override
-            public void startSync(Uri uri, Bundle extras) {
-            }
-
-            @Override
-            public void cancelSync(Uri uri) {
-            }
-        };
-
-        String[] projection = { MediaStore.Images.Media.DATA };
-        Cursor cur = cr.query(picUri, projection, null, null, null);
-        cur.moveToFirst();
-        String path = cur.getString(cur.getColumnIndex(MediaStore.Images.Media.DATA));
-
-        File file = new File(path);
-
-        BufferedInputStream fIn = new BufferedInputStream(new FileInputStream(file));
-        DataInputStream dataStream = new DataInputStream(fIn);
-
-        byte[] pictureData = new byte[dataStream.available()];
-        dataStream.read(pictureData);
-
-        return new String(pictureData);
-    }
-
-    /**
-     * todo: determine if this is really needed and impliment it if so
-     * @param intent
-     * @return
-     */
-    public IBinder onBind (Intent intent) {
-        Log.d(TAG, "onBind called, redirecting to onStart");
-        onStart(intent);
+    @Override
+    public IBinder onBind(Intent intent) {
+        onStart(intent, 0); // todo: determine what the startId should be or if 0 is good
         return null;
+    }
+
+    private void uploadImage(String server, String api_key, Uri picUri) throws IOException {
+
+        HttpURLConnection conn = null;
+        DataOutputStream uploadStream = null;
+        InputStream imageStream = null;
+
+        try {
+            conn = (HttpURLConnection) new URL(server).openConnection();
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            conn.setUseCaches(false);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + BOUNDARY_BASE);
+            uploadStream = new DataOutputStream(conn.getOutputStream());
+
+            // send the api key
+            uploadStream.writeBytes(BOUNDARY);
+            uploadStream.writeBytes("Content-Disposition: form-data; name=\"api_key\"" + CRLF + CRLF);
+            uploadStream.writeBytes(URLEncoder.encode(api_key, "UTF-8") + CRLF);
+
+            // send the picture
+            uploadStream.writeBytes(BOUNDARY);
+            uploadStream.writeBytes("Content-Disposition: form-data; name=\"image\"; filename=\"" + URLEncoder.encode(new Date().toString(), "UTF-8") + ".jpg\"" + CRLF);
+            uploadStream.writeBytes("Content-Type: image/jpeg" + CRLF);
+            uploadStream.writeBytes("Content-Transfer-Encoding: binary" + CRLF);
+            uploadStream.writeBytes(CRLF);
+
+            imageStream = getContentResolver().openInputStream(picUri);
+            int maxBufferSize = 1024;
+            int bufferSize = Math.min(imageStream.available(), maxBufferSize);
+            byte[] buffer = new byte[bufferSize];
+
+            int bytesRead = imageStream.read(buffer, 0, bufferSize);
+
+            while (bytesRead > 0) {
+                uploadStream.write(buffer, 0, bufferSize);
+                bufferSize = Math.min(imageStream.available(), maxBufferSize);
+                buffer = new byte[bufferSize];
+                bytesRead = imageStream.read(buffer, 0, bufferSize);
+            }
+            uploadStream.writeBytes(CRLF);
+            imageStream.close();
+
+            uploadStream.writeBytes(CLOSE_BOUNDARY);
+            uploadStream.flush();
+
+            Log.d(TAG, "upload complete, status is" + conn.getResponseCode() + "\n response was \n" + conn.getResponseMessage());
+        }
+        finally {
+            // cleanup - probably unnecessary unless something else went wrong
+            try {
+                if(uploadStream != null) uploadStream.close();
+                if(imageStream != null) imageStream .close();
+                if(conn != null) conn.disconnect();
+                // System.gc(); // is this worthwhile?
+            } catch(IOException ioe) {
+                Log.d(TAG, "Error cleaning up", ioe);
+            }
+        }
+
     }
 }
